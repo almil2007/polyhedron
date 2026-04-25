@@ -1,4 +1,4 @@
-from math import pi
+from math import *
 from functools import reduce
 from operator import add
 from common.r3 import R3
@@ -98,6 +98,19 @@ class Facet:
             self.vertexes[1] - self.vertexes[0]).cross(
             self.vertexes[2] - self.vertexes[0])
         return n * (-1.0) if n.dot(Polyedr.V) < 0.0 else n
+
+    # Вычисление площади грани
+    def area(self):
+        N = self.vertexes[-1].cross(self.vertexes[0])
+        for i in range(1, len(self.vertexes)):
+            N += (
+            self.vertexes[i-1]).cross(
+            self.vertexes[i])
+        return (N.x ** 2 + N.y **2 + N.z ** 2) ** 0.5 / 2
+    # Вычисление угла между гранью и плоскостью
+    def angle(self):
+        n = self.h_normal()
+        return acos(abs(n.z) / (n.x ** 2 + n.y **2 + n.z ** 2) ** 0.5)
 
     # Нормали к «вертикальным» полупространствам, причём k-я из них
     # является нормалью к грани, которая содержит ребро, соединяющее
