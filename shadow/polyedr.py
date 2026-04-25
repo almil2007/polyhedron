@@ -85,8 +85,9 @@ class Facet:
     """ Грань полиэдра """
     # Параметры конструктора: список вершин
 
-    def __init__(self, vertexes):
+    def __init__(self, vertexes, raw_vertexes):
         self.vertexes = vertexes
+        self.raw_vertexes = raw_vertexes
 
     # «Вертикальна» ли грань?
     def is_vertical(self):
@@ -101,15 +102,18 @@ class Facet:
 
     # Вычисление площади грани
     def area(self):
-        N = self.vertexes[-1].cross(self.vertexes[0])
-        for i in range(1, len(self.vertexes)):
+        N = self.raw_vertexes[-1].cross(self.raw_vertexes[0])
+        for i in range(1, len(self.raw_vertexes)):
             N += (
-            self.vertexes[i-1]).cross(
-            self.vertexes[i])
+            self.raw_vertexes[i-1]).cross(
+            self.raw_vertexes[i])
         return (N.x ** 2 + N.y **2 + N.z ** 2) ** 0.5 / 2
+
     # Вычисление угла между гранью и плоскостью
     def angle(self):
-        n = self.h_normal()
+        n = (
+            self.raw_vertexes[1] - self.raw_vertexes[0]).cross(
+            self.raw_vertexes[2] - self.raw_vertexes[0])
         return acos(abs(n.z) / (n.x ** 2 + n.y **2 + n.z ** 2) ** 0.5)
 
     # Нормали к «вертикальным» полупространствам, причём k-я из них
@@ -141,6 +145,9 @@ class Polyedr:
         # списки вершин, рёбер и граней полиэдра
         self.vertexes, self.edges, self.facets = [], [], []
 
+        # список вершин без преобразований
+        self.raw_vertexes = []
+
         # список строк файла
         with open(file) as f:
             for i, line in enumerate(f):
@@ -159,6 +166,7 @@ class Polyedr:
                     x, y, z = (float(x) for x in line.split())
                     self.vertexes.append(R3(x, y, z).rz(
                         alpha).ry(beta).rz(gamma) * c)
+                    self.raw_vertexes.append(R3(x, y, z))
                 else:
                     # вспомогательный массив
                     buf = line.split()
@@ -166,11 +174,12 @@ class Polyedr:
                     size = int(buf.pop(0))
                     # массив вершин этой грани
                     vertexes = list(self.vertexes[int(n) - 1] for n in buf)
+                    raw_vertexes = list(self.raw_vertexes[int(n) - 1] for n in buf)
                     # задание рёбер грани
                     for n in range(size):
                         self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
                     # задание самой грани
-                    self.facets.append(Facet(vertexes))
+                    self.facets.append(Facet(vertexes, raw_vertexes))
 
     # Метод изображения полиэдра
     def draw(self, tk):  # pragma: no cover
