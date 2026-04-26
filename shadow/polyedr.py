@@ -88,6 +88,7 @@ class Facet:
     def __init__(self, vertexes, raw_vertexes):
         self.vertexes = vertexes
         self.raw_vertexes = raw_vertexes
+        self.edges = []
 
     # «Вертикальна» ли грань?
     def is_vertical(self):
@@ -99,6 +100,10 @@ class Facet:
             self.vertexes[1] - self.vertexes[0]).cross(
             self.vertexes[2] - self.vertexes[0])
         return n * (-1.0) if n.dot(Polyedr.V) < 0.0 else n
+
+    # Добавление грани
+    def add_edge(self, edge):
+        self.edges = []
 
     # Вычисление площади грани
     def area(self):
@@ -128,6 +133,11 @@ class Facet:
         return n * \
             (-1.0) if n.dot(self.vertexes[k - 1] - self.center()) < 0.0 else n
 
+    # Центр изначальной грани
+    def raw_center(self):
+        return sum(self.raw_vertexes, R3(0.0, 0.0, 0.0)) * \
+            (1.0 / len(self.raw_vertexes))
+
     # Центр грани
     def center(self):
         return sum(self.vertexes, R3(0.0, 0.0, 0.0)) * \
@@ -144,6 +154,8 @@ class Polyedr:
 
         # списки вершин, рёбер и граней полиэдра
         self.vertexes, self.edges, self.facets = [], [], []
+
+        self.edge_map = {}
 
         # список вершин без преобразований
         self.raw_vertexes = []
@@ -174,12 +186,20 @@ class Polyedr:
                     size = int(buf.pop(0))
                     # массив вершин этой грани
                     vertexes = list(self.vertexes[int(n) - 1] for n in buf)
+                    v_indexes = list(int(n) - 1 for n in buf)
                     raw_vertexes = list(self.raw_vertexes[int(n) - 1] for n in buf)
-                    # задание рёбер грани
-                    for n in range(size):
-                        self.edges.append(Edge(vertexes[n - 1], vertexes[n]))
                     # задание самой грани
                     self.facets.append(Facet(vertexes, raw_vertexes))
+                    # задание рёбер грани
+                    for n in range(size):
+                        key = tuple(sorted([v_indexes[n - 1], v_indexes[n]]))
+                        if key in self.edge_map:
+                            self.facets[-1].add_edge(self.edge_map[key])
+                        else:
+                            edge = Edge(vertexes[n-1], vertexes[n])
+                            self.edges.append(edge)
+                            self.edge_map[key] = edge
+                            self.facets[-1].add_edge(edge)
 
     # Метод изображения полиэдра
     def draw(self, tk):  # pragma: no cover
