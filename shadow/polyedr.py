@@ -105,7 +105,7 @@ class Facet:
     def add_edge(self, edge):
         self.edges = []
 
-    # Вычисление площади грани
+    # Вычисление площади изначальной грани
     def area(self):
         N = self.raw_vertexes[-1].cross(self.raw_vertexes[0])
         for i in range(1, len(self.raw_vertexes)):
@@ -114,7 +114,7 @@ class Facet:
             self.raw_vertexes[i])
         return (N.x ** 2 + N.y **2 + N.z ** 2) ** 0.5 / 2
 
-    # Вычисление угла между гранью и плоскостью
+    # Вычисление угла между изначальной гранью и плоскостью
     def angle(self):
         n = (
             self.raw_vertexes[1] - self.raw_vertexes[0]).cross(
@@ -209,3 +209,10 @@ class Polyedr:
                 e.shadow(f)
             for s in e.gaps:
                 tk.draw_line(e.r3(s.beg), e.r3(s.fin))
+    # Подсчёт площади полиэдра
+    def calc(self):
+        sum = 0
+        for f in self.facets:
+            if all(x.gaps == [] for x in f.edges) and f.angle() <= pi/7 and abs(f.raw_center().x - 2) <= 1:
+                sum += f.area()
+        return sum

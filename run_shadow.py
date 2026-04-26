@@ -11,9 +11,11 @@ try:
         print("=============================================================")
         print(f"Начало работы с полиэдром '{name}'")
         start_time = time()
-        Polyedr(f"data/{name}.geom").draw(tk)
+        currentPolyedr = Polyedr(f"data/{name}.geom")
+        currentPolyedr.draw(tk)
         delta_time = time() - start_time
         print(f"Изображение полиэдра '{name}' заняло {delta_time} сек.")
+        print(f"Площадь подподающих под условие граней полиэдра '{name}' равно {currentPolyedr.calc()}")
         input("Hit 'Return' to continue -> ")
 except (EOFError, KeyboardInterrupt):
     print("\nStop")
