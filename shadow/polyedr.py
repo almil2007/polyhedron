@@ -103,23 +103,23 @@ class Facet:
 
     # Добавление грани
     def add_edge(self, edge):
-        self.edges = []
+        self.edges.append(edge)
 
     # Вычисление площади изначальной грани
     def area(self):
         N = self.raw_vertexes[-1].cross(self.raw_vertexes[0])
         for i in range(1, len(self.raw_vertexes)):
             N += (
-            self.raw_vertexes[i-1]).cross(
-            self.raw_vertexes[i])
-        return (N.x ** 2 + N.y **2 + N.z ** 2) ** 0.5 / 2
+                self.raw_vertexes[i-1]).cross(
+                self.raw_vertexes[i])
+        return (N.x ** 2 + N.y ** 2 + N.z ** 2) ** 0.5 / 2
 
     # Вычисление угла между изначальной гранью и плоскостью
     def angle(self):
         n = (
             self.raw_vertexes[1] - self.raw_vertexes[0]).cross(
             self.raw_vertexes[2] - self.raw_vertexes[0])
-        return acos(abs(n.z) / (n.x ** 2 + n.y **2 + n.z ** 2) ** 0.5)
+        return acos(abs(n.z) / (n.x ** 2 + n.y ** 2 + n.z ** 2) ** 0.5)
 
     # Нормали к «вертикальным» полупространствам, причём k-я из них
     # является нормалью к грани, которая содержит ребро, соединяющее
@@ -187,7 +187,8 @@ class Polyedr:
                     # массив вершин этой грани
                     vertexes = list(self.vertexes[int(n) - 1] for n in buf)
                     v_indexes = list(int(n) - 1 for n in buf)
-                    raw_vertexes = list(self.raw_vertexes[int(n) - 1] for n in buf)
+                    raw_vertexes = list(self.raw_vertexes[int(n) - 1]
+                                        for n in buf)
                     # задание самой грани
                     self.facets.append(Facet(vertexes, raw_vertexes))
                     # задание рёбер грани
@@ -205,14 +206,20 @@ class Polyedr:
     def draw(self, tk):  # pragma: no cover
         tk.clean()
         for e in self.edges:
-            for f in self.facets:
-                e.shadow(f)
             for s in e.gaps:
                 tk.draw_line(e.r3(s.beg), e.r3(s.fin))
+
     # Подсчёт площади полиэдра
     def calc(self):
         sum = 0
+        for e in self.edges:
+            for f in self.facets:
+                e.shadow(f)
         for f in self.facets:
-            if all(x.gaps == [] for x in f.edges) and f.angle() <= pi/7 and abs(f.raw_center().x - 2) <= 1:
+            '''print([i.koord() for i in f.raw_vertexes],
+            all(x.gaps == [] for x in f.edges),
+            f.angle() <= pi/7, abs(f.raw_center().x - 2) <= 1)'''
+            if (all(x.gaps == [] for x in f.edges) and f.angle() <=
+                    pi/7 and abs(f.raw_center().x - 2) <= 1):
                 sum += f.area()
         return sum

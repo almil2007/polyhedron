@@ -31,6 +31,10 @@ class R3:
         return R3(cos(fi) * self.x + sin(fi) * self.z,
                   self.y, -sin(fi) * self.x + cos(fi) * self.z)
 
+    # Координаты
+    def koord(self):
+        return self.x, self.y, self.z
+
     # Скалярное произведение
     def dot(self, other):
         return self.x * other.x + self.y * other.y + self.z * other.z

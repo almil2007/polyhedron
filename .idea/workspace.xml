@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1dccdcc8-a783-4f98-bf8a-e76da635a114" name="Changes" comment="" />
+    <list default="true" id="1dccdcc8-a783-4f98-bf8a-e76da635a114" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/r3.py" beforeDir="false" afterPath="$PROJECT_DIR$/common/r3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/cube.geom" beforeDir="false" afterPath="$PROJECT_DIR$/data/cube.geom" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/run_shadow.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_shadow.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shadow/polyedr.py" beforeDir="false" afterPath="$PROJECT_DIR$/shadow/polyedr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_edge.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_edge.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_facet.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_facet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_polyedr.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_polyedr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_r3.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_r3.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -16,24 +26,56 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 6
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectId" id="3CrTIlQDWxdks1QsFNoolqvMpMm" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="1" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Python tests.Python tests for test_edge.TestVoid.test_r302.executor": "Run",
+    "Python.polyedr.executor": "Run",
+    "Python.run_shadow.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true"
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/Users/sasha/OneDrive/Рабочий стол/polyhedron"
   }
 }]]></component>
-  <component name="RunManager" selected="Python.run_shadow">
+  <component name="RunManager" selected="Python.polyedr">
+    <configuration name="polyedr" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="polyhedron" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/shadow" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/shadow/polyedr.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="run_shadow" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="polyhedron" />
+      <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -55,6 +97,7 @@
     </configuration>
     <configuration name="tk_drawer" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="polyhedron" />
+      <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -74,12 +117,36 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="Python tests for test_edge.TestVoid.test_r302" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="polyhedron" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_edge.TestVoid.test_r302&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.polyedr" />
+        <item itemvalue="Python tests.Python tests for test_edge.TestVoid.test_r302" />
         <item itemvalue="Python.run_shadow" />
         <item itemvalue="Python.tk_drawer" />
       </list>
     </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-a5bc9544c897-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.23654.177" />
+      </set>
+    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -91,5 +158,8 @@
       <updated>1777142612107</updated>
     </task>
     <servers />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.geom" />
   </component>
 </project>

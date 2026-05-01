@@ -1,0 +1,3 @@
+py -m pytest -v
+py -m pycodestyle .
+py -m pytest --cov=.
