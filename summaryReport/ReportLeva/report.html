@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ru" xml:lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Айвазян Лёва, Б25-205" />
+  <title>Отчёт о модификации проекта «Изображение проекции полиэдра»</title>
+  <link rel="stylesheet" href="https://edu-support.mephi.ru/Stylesheets/Highlighting.css">
+  <link rel="stylesheet" href="https://edu-support.mephi.ru/Stylesheets/markdown.css">
+  
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  
+  
+</head>
+<body>
+<header>
+<h1 class="title">Отчёт о модификации проекта «Изображение проекции
+полиэдра»</h1>
+<p class="author">Айвазян Лёва, Б25-205</p>
+<p class="date">29 апреля 2026 года</p>
+</header>
+<h1 id="введение">Введение</h1>
+<p>В рамках данного проекта рассматривается задача визуализации
+трёхмерных объектов, представленных в виде полиэдров, на двухмерной
+плоскости. Основной целью проекта была реализация алгоритма по удалению
+невидимых линий.</p>
+<h2 id="постановка-задачи">Постановка задачи</h2>
+<p>В эталонный код проекта необходимо было внести изменения для расчёта
+специфической характеристики полиэдра. Требуется вычислить сумму длин
+невидимых частей частично видимых рёбер. При этом учитываются только те
+рёбра, центр которых находится строго внутри сферы радиуса 2, заданной
+уравнением:</p>
+<p><span class="math display">\[x^2 + y^2 + z^2 = 4\]</span></p>
+<p>Важным условием является то, что коэффициенты гомотетии и углы Эйлера
+влияют только на изображение проекции, но не изменяют сам исходный
+полиэдр и его метрические характеристики.</p>
+<h1 id="описание-решения">Описание решения</h1>
+<p>В ходе реализации модификации в программу были внесены изменения,
+позволяющие сохранять оригинальные координаты вершин без учёта вращения
+и коэффициента гомотетии.</p>
+<h2 id="сохранение-исходных-данных">Сохранение исходных данных</h2>
+<p>При считывании данных из файла, формируется дополнительный атрибут
+объекта класса <code>Polyedr</code> список <code>orig_vertexes</code>,
+где хранятся оригинальные точки. Это необходимо для корректного расчёта
+метрических характеристик, так как экранные координаты подвергаются
+искажению.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">elif</span> i <span class="op">&lt;</span> nv <span class="op">+</span> <span class="dv">2</span>:</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Задание всех вершин полиэдра</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    x, y, z <span class="op">=</span> (<span class="bu">float</span>(x) <span class="cf">for</span> x <span class="kw">in</span> line.split())</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.orig_vertexes.append(R3(x, y, z))</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.vertexes.append(R3(x, y, z).rz(</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        alpha).ry(beta).rz(gamma) <span class="op">*</span> c)</span></code></pre></div>
+<p>Каждое ребро (объект класса <code>Edge</code>) инициализируется с
+сохранением информации как об искажённых, так и об оригинальных
+координатах своих начала и конца.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> <span class="bu">range</span>(size):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.edges.append(Edge(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Искажённые</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        vertexes[n <span class="op">-</span> <span class="dv">1</span>], vertexes[n],</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Оригинальные</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        orig_vertexes[n <span class="op">-</span> <span class="dv">1</span>], orig_vertexes[n]</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    ))</span></code></pre></div>
+<p>В конструкторе класса <code>Edge</code> для этого предусмотрены
+соответствующие параметры:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, beg, fin, orig_beg, orig_fin):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.beg, <span class="va">self</span>.fin <span class="op">=</span> beg, fin</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.orig_beg, <span class="va">self</span>.orig_fin <span class="op">=</span> orig_beg, orig_fin</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.gaps <span class="op">=</span> [Segment(Edge.SBEG, Edge.SFIN)]</span></code></pre></div>
+<h2 id="алгоритм-расчёта-невидимых-частей">Алгоритм расчёта невидимых
+частей</h2>
+<p>Основной алгоритм базируется на анализе списка <code>gaps</code>,
+который содержит совокупность видимых отрезков ребра, не находящихся в
+тени.</p>
+<p>В классе <code>Polyedr</code> реализован метод
+<code>length_shadow()</code>, выполняющий роль каркаса. Он отсеивает
+рёбра, центр которых находится вне заданной сферы <span
+class="math inline">\(x^2 + y^2 + z^2 &lt; 4\)</span>. Для подходящих
+рёбер вызывается метод <code>length_for_edge</code>.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> length_shadow(<span class="va">self</span>):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    total_sum <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Проходимся по всем рёбрам</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> e <span class="kw">in</span> <span class="va">self</span>.edges:</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Ищем центр ребра</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        center <span class="op">=</span> e.find_center_edge()</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Проверяем, что центр лежит внутри сферы</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> center.x<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> center.y<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> center.z<span class="op">**</span><span class="dv">2</span> <span class="op">&lt;</span> <span class="dv">4</span>:</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Тогда считаем длины затенённых частей</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>            total_sum <span class="op">+=</span> e.length_for_edge()</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total_sum</span></code></pre></div>
+<p>Метод <code>length_for_edge</code> анализирует суммарную длину
+просветов ребра и проверяет условие его частичной затенённости. Из
+полной доли отрезка вычитается видимая часть, что позволяет вычислить
+долю тени. Результат умножается на истинную длину ребра, вычисляемую
+методом <code>distance</code> через скалярное произведение.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> length_for_edge(<span class="va">self</span>):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    summary_gap <span class="op">=</span> <span class="fl">0.0</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Проходимся по всем просветам ребра</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> gap <span class="kw">in</span> <span class="va">self</span>.gaps:</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        summary_gap <span class="op">+=</span> gap.length_for_segment()</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Проверяем, что ребро не полностью</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># в тени или на свету</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="fl">0.0</span> <span class="op">&lt;</span> summary_gap <span class="op">&lt;</span> <span class="fl">1.0</span>:</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Возвращаем реальную длину тени</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="co"># без учёта масштабирования</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        d <span class="op">=</span> <span class="va">self</span>.orig_beg.distance(<span class="va">self</span>.orig_fin)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> (<span class="fl">1.0</span> <span class="op">-</span> summary_gap) <span class="op">*</span> d</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># В противном случае не считаем</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># эту часть по требованию задачи</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="fl">0.0</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Находим длину вектора между двумя точками через скалярное произведение</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> distance(<span class="va">self</span>, other):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    diff <span class="op">=</span> <span class="va">self</span> <span class="op">-</span> other</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> sqrt(diff.dot(diff))</span></code></pre></div>
+<p>Итоговое значение делится пополам, так как каждое ребро принадлежит
+одновременно двум граням и учитывается алгоритмом дважды. Результат
+выводится в терминал:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ans <span class="op">=</span> p.length_shadow() <span class="op">/</span> <span class="fl">2.0</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;Сумма длин невидимых частей: </span><span class="sc">{</span>ans<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+<h1 id="тестирование-программы">Тестирование программы</h1>
+<p>Для проверки корректности алгоритма были спроектированы пять
+специальных полиэдров. Каждый из них представляет собой комбинацию из
+двух блоков: нижнего (целевого, на котором мы ищем тени) и верхнего
+(заслонки, которая отбрасывает тень).</p>
+<ul>
+<li><p><strong>Тест №1:</strong> Базовый случай частичного перекрытия.
+Нижний блок расположен точно по центру. Это гарантирует попадание
+центров его рёбер внутрь сферы радиуса 2. Верхняя заслонка нависает
+только над правой частью фигуры. Тест проверяет подсчёт длин частично
+затенённых рёбер.</p>
+<p><img src="image/polyedr.png" /></p>
+<p><em>Пример частичного перекрытия полиэдров из Теста №1</em></p>
+<p><img src="image/Rotate_polyedr.png" /></p>
+<p><em>Для наглядности равернем полиэдры</em></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> test_polyedr_1(<span class="va">self</span>):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>      <span class="co">&quot;&quot;&quot;Частичное перекрытие, центр внутри сферы.&quot;&quot;&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>      ans <span class="op">=</span> <span class="va">self</span>.get_ans(<span class="st">&quot;Polyedr_test1&quot;</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>      <span class="va">self</span>.assertEqual(ans, <span class="fl">8.0</span>)</span></code></pre></div></li>
+<li><p><strong>Тест №2:</strong> Проверка отсутствия ложных
+срабатываний. Нижний целевой блок остаётся в пределах сферы, но верхняя
+заслонка сильно смещена вправо. В результате тень от верхнего блока
+никак не падает на нижний. Тест подтверждает, что при отсутствии теней
+на целевых рёбрах алгоритм корректно возвращает нулевое значение.</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> test_polyedr_2(<span class="va">self</span>):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>      <span class="co">&quot;&quot;&quot;Заслонка смещена, перекрытия нет или оно вне сферы.&quot;&quot;&quot;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>      ans <span class="op">=</span> <span class="va">self</span>.get_ans(<span class="st">&quot;Polyedr_test2&quot;</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>      <span class="va">self</span>.assertEqual(ans, <span class="fl">0.0</span>)</span></code></pre></div></li>
+<li><p><strong>Тест №3:</strong> Проверка алгоритма при центральном
+перекрытии. Верхняя заслонка расположена прямо над центром нижнего
+блока. Она ложится ровно поперёк целевой фигуры, разрезая видимые рёбра
+на несколько фрагментов. Тест проверяет, как программа суммирует тени,
+когда рёбра делятся тенью на несколько видимых отрезков.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> test_polyedr_3(<span class="va">self</span>):</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>      <span class="co">&quot;&quot;&quot;Большая заслонка, полное или значительное перекрытие.&quot;&quot;&quot;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>      ans <span class="op">=</span> <span class="va">self</span>.get_ans(<span class="st">&quot;Polyedr_test3&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>      <span class="va">self</span>.assertEqual(ans, <span class="fl">8.0</span>)</span></code></pre></div></li>
+<li><p><strong>Тест №4:</strong> Проверка отсечения объектов, лежащих
+вне заданной сферы. Обе фигуры искусственно перенесены далеко от начала
+координат. Программа должна проигнорировать все рёбра фигуры и вернуть
+строгий ноль.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> test_polyedr_4(<span class="va">self</span>):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>      <span class="co">&quot;&quot;&quot;Объекты далеко, центры рёбер вне сферы.&quot;&quot;&quot;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>      ans <span class="op">=</span> <span class="va">self</span>.get_ans(<span class="st">&quot;Polyedr_test4&quot;</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>      <span class="va">self</span>.assertEqual(ans, <span class="fl">0.0</span>)</span></code></pre></div></li>
+<li><p><strong>Тест №5:</strong> Проверка точности вычисления центра
+ребра при асимметричном смещении. Нижний блок смещён по осям Y и Z.
+Несмотря на это смещение, центры части рёбер всё ещё удовлетворяют
+условию <span class="math inline">\(x^2 + y^2 + z^2 &lt; 4\)</span>.
+Тест доказывает, что алгоритм не отсчитывает центр сферы от центра
+полиэдра; центр сферы всегда расположен в начале декартовой системы
+координат.</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> test_polyedr_5(<span class="va">self</span>):</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>      <span class="co">&quot;&quot;&quot;Смещение по Y и Z, проверка точности расчёта центра.&quot;&quot;&quot;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>      ans <span class="op">=</span> <span class="va">self</span>.get_ans(<span class="st">&quot;Polyedr_test5&quot;</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>      <span class="va">self</span>.assertEqual(ans, <span class="fl">2.0</span>)</span></code></pre></div></li>
+</ul>
+<h2 id="команды-сборки-отчётов">Команды сборки отчётов</h2>
+<p>Конвертация исходного файла в требуемые форматы выполнялась с помощью
+утилиты Pandoc следующими командами:</p>
+<ul>
+<li><strong>HTML:</strong>
+<code>pandoc report.md -f markdown --template=default.html5 --mathjax -o report.html</code></li>
+<li><strong>PDF:</strong>
+<code>pandoc report.md -f markdown --template=default.latex -o report.pdf</code></li>
+<li><strong>DOCX:</strong>
+<code>pandoc report.md -f markdown -o report.docx</code></li>
+</ul>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['\\[','\\]']],
+    processEscapes: false,
+    processRefs: true,
+    processEnvironments: true,
+    macros: {
+      sh: "{\\mathop{\\mathrm{sh}\\ }\\nolimits}",
+      ch: "{\\mathop{\\mathrm{ch}\\ }\\nolimits}",
+      tg: "{\\mathop{\\mathrm{tg}\\ }\\nolimits}",
+      ctg: "{\\mathop{\\mathrm{ctg}\\ }\\nolimits}",
+      arctg: "{\\mathop{\\mathrm{arctg}\\ }\\nolimits}",
+      arcctg: "{\\mathop{\\mathrm{arcctg}\\ }\\nolimits}",
+      th: "{\\mathop{\\mathrm{th}\\ }\\nolimits}",
+      cth: "{\\mathop{\\mathrm{cth}\\ }\\nolimits}",
+      cosec: "{\\mathop{\\mathrm{cosec}\\ }\\nolimits}",
+      Prob: "{\\mathop{\\mathsf{P}}\\nolimits}",
+      Variance: "{\\mathop{\\mathsf{D}}\\nolimits}",
+      nod: "{\\mathop{\\mathrm{н.о.д.}}\\nolimits}",
+      nok: "{\\mathop{\\mathrm{н.о.к.}}\\nolimits}",
+      NOD: "{\\mathop{\\mathrm{НОД}}\\nolimits}",
+      NOK: "{\\mathop{\\mathrm{НОК}}\\nolimits}",
+      Proj: "{\\mathop{\\mathrm{Пр}}\\nolimits}"
+    }
+  },
+  options: {
+    skipHtmlTags: ['script','noscript','style','textarea','pre','code'],
+    ignoreHtmlClass: 'tex2jax_ignore',
+    processHtmlClass: 'tex2jax_process'
+  },
+  svg: {
+    displayAlign: 'left'
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ru" xml:lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Соловьев И.М." />
+  <title>Модификация проекта Изображение проекции полиэдра</title>
+  <link rel="stylesheet" href="https://edu-support.mephi.ru/Stylesheets/Highlighting.css">
+  <link rel="stylesheet" href="https://edu-support.mephi.ru/Stylesheets/markdown.css">
+  
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header>
+<h1 class="title">Модификация проекта Изображение проекции полиэдра</h1>
+<p class="author">Соловьев И.М.</p>
+<p class="date">23 апреля 2026 г.</p>
+</header>
+<ul>
+<li><a href="#постановка-задачи">Постановка задачи</a></li>
+<li><a href="#описание-решения">Описание решения</a>
+<ul>
+<li><a href="#модификация-r3py">Модификация <code>r3.py</code></a></li>
+<li><a href="#модификация-polyedrpy">Модификация
+<code>polyedr.py</code></a></li>
+<li><a href="#изменение-структуры-проекта">Изменение структуры
+проекта</a></li>
+</ul></li>
+<li><a href="#некоторые-тесты">Некоторые тесты</a></li>
+<li><a href="#заключение">Заключение</a></li>
+</ul>
+<h2 id="постановка-задачи">Постановка задачи</h2>
+<p>Отчёт посвящён модификации проекта «Изображение проекции полиэдра».
+Решалась задача, сформулированная следующим образом: «Назовём точку в
+пространстве «хорошей», если её проекция находится строго вне окружности
+<span class="math inline">\(x^2+y^2=1\)</span>. Необходимо
+модифицировать эталонный проект таким образом, чтобы определялась и
+печаталась следующая характеристика полиэдра: сумма площадей граней,
+центр и хотя бы одна вершина которых — «хорошие» точки».</p>
+<p>Исходный программный проект реализует алгоритм построения
+ортогональной проекции произвольного полиэдра на плоскость с учётом
+теней, отбрасываемых его гранями. Архитектура проекта разделена на
+модули геометрических примитивов, алгоритма отсечения и графического
+вывода.</p>
+<p>Требуется вычислить и вывести в консоль суммарную площадь проекций
+всех «хороших» граней. Площадь должна рассчитываться исключительно для
+двумерной проекции грани на плоскость <span
+class="math inline">\(XOY\)</span>. При этом визуализация самого
+полиэдра должна сохраняться в исходном виде без изменения алгоритма
+отсечения невидимых линий и расчёта теней.</p>
+<h2 id="описание-решения">Описание решения</h2>
+<p>При выполнении задачи были модифицированы файлы: <code>r3.py</code>,
+<code>polyedr.py</code>, изменен и переименован файл запуска, а также
+добавлены тесты в <code>test_facet.py</code> и
+<code>test_polyedr.py</code>. Далее мы рассмотрим модификации
+детально.</p>
+<h3 id="модификация-r3.py">Модификация <code>r3.py</code></h3>
+<p>Исходя из постановки задачи, первоочерёдно нам нужно добавить метод,
+возвращающий проекцию трёхмерной точки на плоскость <span
+class="math inline">\(XOY\)</span>. Это необходимо для проверки условия
+«хорошести» точки и вычисления площадей проекций.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> xy(<span class="va">self</span>):</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Возвращает проекцию на плоскость XOY как кортеж (x, y)&quot;&quot;&quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (<span class="va">self</span>.x, <span class="va">self</span>.y)</span></code></pre></div>
+<p>Метод <code>xy()</code> возвращает кортеж из двух координат <span
+class="math inline">\((x, y)\)</span>, что позволяет удобно работать с
+двумерными проекциями точек без необходимости каждый раз явно обращаться
+к атрибутам <code>x</code> и <code>y</code> объекта <code>R3</code>.
+Данная функция инкапсулирует операцию отбрасывания <span
+class="math inline">\(Z\)</span>-компоненты и предоставляет удобный
+интерфейс для дальнейших двумерных вычислений.</p>
+<h3 id="модификация-polyedr.py">Модификация <code>polyedr.py</code></h3>
+<p>Основные изменения сосредоточены в классе <code>Facet</code>, где
+реализованы два новых метода: <code>condition()</code> и
+<code>facet_area()</code>.</p>
+<p>Метод <code>condition()</code> проверяет, является ли грань
+«хорошей». Для этого вычисляется центр многоугольника как среднее
+арифметическое координат всех вершин:</p>
+<p><span class="math display">\[ c = \frac{1}{n} \sum_{i=1}^{n} v_i
+\]</span></p>
+<p>Затем последовательно проверяется неравенство для центра и для каждой
+вершины грани:</p>
+<p><span class="math display">\[ x_c^2 + y_c^2 &gt; 1 \quad \text{и}
+\quad \exists v_i: x_i^2 + y_i^2 &gt; 1 \]</span></p>
+<p>Если оба условия выполняются, метод возвращает логическое значение
+<code>True</code>. Использование строгого неравенства гарантирует, что
+точки, лежащие точно на границе окружности, не будут считаться хорошими,
+что соответствует постановке задачи.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> condition(<span class="va">self</span>):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    flag_center <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    flag_vertex <span class="op">=</span> <span class="va">False</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> R3.xy(<span class="va">self</span>.center())[<span class="dv">0</span>] <span class="op">**</span> <span class="dv">2</span> <span class="op">+</span> R3.xy(<span class="va">self</span>.center())[<span class="dv">1</span>] <span class="op">**</span> <span class="dv">2</span> <span class="op">&gt;</span> <span class="dv">1</span>:</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        flag_center <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(<span class="va">self</span>.vertexes)):</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> R3.xy(<span class="va">self</span>.vertexes[i])[<span class="dv">0</span>] <span class="op">**</span> <span class="dv">2</span> <span class="op">+</span> R3.xy(<span class="va">self</span>.vertexes[i])[<span class="dv">1</span>] <span class="op">**</span> <span class="dv">2</span> <span class="op">&gt;</span> <span class="dv">1</span>:</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>            flag_vertex <span class="op">=</span> <span class="va">True</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>            <span class="cf">break</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> flag_vertex <span class="op">==</span> <span class="va">True</span> <span class="kw">and</span> flag_center <span class="op">==</span> <span class="va">True</span>:</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
+<p>Вычисление площади проекции выполняется в методе
+<code>facet_area()</code>. Поскольку грань может быть произвольным
+выпуклым многоугольником, применяется алгоритм триангуляции «веером» от
+первой вершины. Площадь каждого треугольника в проекции рассчитывается
+по формуле ориентированной площади, взятой по модулю:</p>
+<p><span class="math display">\[ S_{\triangle} = \frac{1}{2} \left| (x_1
+- x_3)(y_2 - y_3) - (y_1 - y_3)(x_2 - x_3) \right| \]</span></p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Площадь треугольника (вспомогательный метод)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">@staticmethod</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _area(a, b, c):</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="bu">abs</span>(<span class="fl">0.5</span> <span class="op">*</span> ((a[<span class="dv">0</span>] <span class="op">-</span> c[<span class="dv">0</span>]) <span class="op">*</span> (b[<span class="dv">1</span>] <span class="op">-</span> c[<span class="dv">1</span>]) <span class="op">-</span> (a[<span class="dv">1</span>] <span class="op">-</span> c[<span class="dv">1</span>]) <span class="op">*</span> (b[<span class="dv">0</span>] <span class="op">-</span> c[<span class="dv">0</span>])))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> facet_area(<span class="va">self</span>):</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        sum_area <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="va">self</span>.condition() <span class="op">==</span> <span class="va">True</span>:</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="bu">len</span>(<span class="va">self</span>.vertexes) <span class="op">-</span> <span class="dv">1</span>):</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>                sum_area <span class="op">+=</span> <span class="va">self</span>._area(R3.xy(<span class="va">self</span>.vertexes[<span class="dv">0</span>]), R3.xy(<span class="va">self</span>.vertexes[i]), R3.xy(<span class="va">self</span>.vertexes[i <span class="op">+</span> <span class="dv">1</span>]))</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> sum_area</span></code></pre></div>
+<p>Сумма площадей всех треугольников даёт полную площадь проекции грани.
+Если грань не удовлетворяет условию <code>condition()</code>, метод
+возвращает ноль. Это позволяет избежать ветвления на этапе агрегации
+результатов.</p>
+<p>В методе <code>Polyedr.draw()</code> добавлен предварительный проход
+по списку граней. На этом этапе накапливается суммарная площадь всех
+хороших граней. Результат выводится в стандартный поток вывода. Далее
+выполняется стандартный алгоритм расчёта теней и отрисовки рёбер,
+который не зависит от новых вычислений и сохраняет обратную
+совместимость.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Метод изображения полиэдра</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> draw(<span class="va">self</span>, tk):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ...</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Добавлено</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    polyedr_area <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> e <span class="kw">in</span> <span class="va">self</span>.edges:</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> f <span class="kw">in</span> <span class="va">self</span>.facets:</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>            e.shadow(f)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> s <span class="kw">in</span> e.gaps:</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>            tk.draw_line(e.r3(s.beg), e.r3(s.fin))</span></code></pre></div>
+<h3 id="изменение-структуры-проекта">Изменение структуры проекта</h3>
+<p>Относительно эталонного проекта были добавлены несколько файлов,
+упрощающих работу при первом запуске в виртуальном окружении IDE:</p>
+<ul>
+<li><code>help.md</code> — справочная информация по использованию
+проекта;</li>
+<li><code>task.md</code> — полное текстовое описание условия
+задания;</li>
+<li><code>requirements.txt</code> — список зависимостей Python для
+быстрой установки.</li>
+</ul>
+<p>Также были удалены файлы, не касающиеся модификации, а аналогичные
+файлы немного изменены и переименованы. Запускать проект предполагается
+с помощью файла:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>run_modification.py</span></code></pre></div>
+<h2 id="некоторые-тесты">Некоторые тесты</h2>
+<p>Для верификации корректности реализации использован фреймворк
+<code>pytest</code> в сочетании со стандартной библиотекой
+<code>unittest</code>. Тестовая стратегия покрывает граничные случаи,
+проверку условия фильтрации и точность вычисления площадей с учётом
+погрешностей чисел с плавающей запятой.</p>
+<p>Сначала рассмотрим новые тесты для метода <code>condition()</code>.
+Здесь всё довольно прозаично: тесты проверяют различные комбинации
+расположения центра и вершин относительно единичной окружности.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_condition_good(<span class="va">self</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Центр и хотя бы одна вершина строго вне x^2+y^2=1&quot;&quot;&quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    verts <span class="op">=</span> [R3(<span class="fl">2.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">3.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">2.5</span>, <span class="fl">1.5</span>, <span class="fl">0.0</span>)]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    f <span class="op">=</span> Facet(verts)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.assertTrue(f.condition())</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_condition_center_inside(<span class="va">self</span>):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Центр внутри круга, условие должно быть False&quot;&quot;&quot;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    verts <span class="op">=</span> [R3(<span class="fl">0.1</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">1.5</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.0</span>, <span class="fl">1.5</span>, <span class="fl">0.0</span>)]</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    f <span class="op">=</span> Facet(verts)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.assertFalse(f.condition())</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_condition_all_inside(<span class="va">self</span>):</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Все точки внутри круга&quot;&quot;&quot;</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    verts <span class="op">=</span> [R3(<span class="fl">0.2</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.3</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.0</span>, <span class="fl">0.4</span>, <span class="fl">0.0</span>)]</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    f <span class="op">=</span> Facet(verts)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.assertFalse(f.condition())</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_condition_boundary_point(<span class="va">self</span>):</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Вершина точно на окружности (x^2+y^2=1) -&gt; не считается &#39;хорошей&#39;&quot;&quot;&quot;</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    verts <span class="op">=</span> [R3(<span class="fl">1.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.0</span>, <span class="fl">1.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.7</span>, <span class="fl">0.7</span>, <span class="fl">0.0</span>)]</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    f <span class="op">=</span> Facet(verts)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Если все вершины &lt;= 1, условие должно быть False</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.assertFalse(f.condition())</span></code></pre></div>
+<p>Для метода <code>facet_area()</code> были добавлены тесты,
+проверяющие корректность вычисления площади проекции. Важно отметить,
+что площадь должна быть положительной только для «хороших» граней, для
+остальных она равна нулю.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_facet_area_positive(<span class="va">self</span>):</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Площадь треугольника в проекции при порядке вершин против часовой стрелки&quot;&quot;&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Грань далеко от начала координат, чтобы condition() == True</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    verts <span class="op">=</span> [R3(<span class="fl">3.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">5.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">0.0</span>)]</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    f <span class="op">=</span> Facet(verts)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Ожидаемая площадь: 0.5 * |2*2| = 2.0</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.assertAlmostEqual(f.area, <span class="fl">2.0</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_facet_area_zero_when_bad(<span class="va">self</span>):</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Если условие &#39;хорошести&#39; не выполняется, area должна быть 0 (согласно текущей реализации)&quot;&quot;&quot;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    verts <span class="op">=</span> [R3(<span class="fl">0.1</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.2</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.0</span>, <span class="fl">0.3</span>, <span class="fl">0.0</span>)]</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    f <span class="op">=</span> Facet(verts)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.assertAlmostEqual(f.area, <span class="fl">0.0</span>)</span></code></pre></div>
+<p>Для класса <code>Polyedr</code> был добавлен тест на метод
+<code>draw()</code>, проверяющий корректность вывода суммарной площади.
+В тесте создаётся искусственный полиэдр с известными координатами
+вершин, и проверяется вывод программы на соответствие аналитически
+рассчитанному значению площади. Захват стандартного вывода
+осуществляется через <code>io.StringIO</code>, что позволяет тестировать
+консольный вывод без открытия графического окна.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MockTkDrawer:</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Заглушка для TkDrawer, чтобы тесты не открывали графическое окно&quot;&quot;&quot;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> clean(<span class="va">self</span>): <span class="cf">pass</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> draw_line(<span class="va">self</span>, p1, p2): <span class="cf">pass</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TestPolyedrAreaSum(unittest.TestCase):</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> test_draw_prints_correct_area(<span class="va">self</span>):</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        <span class="co">&quot;&quot;&quot;Проверка, что draw() выводит сумму площадей &#39;хороших&#39; граней&quot;&quot;&quot;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Создадим минимальный полиэдр вручную для контроля данных</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        p <span class="op">=</span> Polyedr.<span class="fu">__new__</span>(Polyedr)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        p.vertexes, p.edges, p.facets <span class="op">=</span> [], [], []</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Грань 1: &quot;хорошая&quot;, площадь проекции = 2.0</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        v1 <span class="op">=</span> [R3(<span class="fl">3.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">5.0</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">3.0</span>, <span class="fl">2.0</span>, <span class="fl">0.0</span>)]</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        p.facets.append(Facet(v1))</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Грань 2: &quot;плохая&quot;, площадь = 0 по логике condition()</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        v2 <span class="op">=</span> [R3(<span class="fl">0.1</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.2</span>, <span class="fl">0.0</span>, <span class="fl">0.0</span>), R3(<span class="fl">0.0</span>, <span class="fl">0.3</span>, <span class="fl">0.0</span>)]</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        p.facets.append(Facet(v2))</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Рёбра не влияют на сумму площадей, но добавим для целостности</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        p.edges <span class="op">=</span> [Edge(v1[<span class="dv">0</span>], v1[<span class="dv">1</span>]), Edge(v1[<span class="dv">1</span>], v1[<span class="dv">2</span>]), Edge(v1[<span class="dv">2</span>], v1[<span class="dv">0</span>])]</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Захватываем print()</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        captured_output <span class="op">=</span> io.StringIO()</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        sys.stdout <span class="op">=</span> captured_output</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        p.draw(MockTkDrawer())</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        sys.stdout <span class="op">=</span> sys.__stdout__</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>        output <span class="op">=</span> captured_output.getvalue().strip()</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.assertAlmostEqual(<span class="bu">float</span>(output[<span class="dv">26</span>::]), <span class="fl">2.0</span>)</span></code></pre></div>
+<p>Ключевые проверенные сценарии включают:</p>
+<ol type="1">
+<li>Грань полностью находится вне единичной окружности. Ожидается
+положительная площадь и статус <code>condition() == True</code>.</li>
+<li>Грань пересекает границу круга <span class="math inline">\(x^2 + y^2
+= 1\)</span>. Проверяется корректность фильтрации в зависимости от
+положения центра и вершин.</li>
+<li>Грань целиком лежит внутри круга. Площадь должна строго равняться
+нулю.</li>
+<li>Тест на точность вычислений. Используется сравнение с допуском
+<code>math.isclose</code> для избежания ложных срабатываний.</li>
+</ol>
+<p><img src="./extras/images/tests_console.png"
+style="width:15cm" /></p>
+<p>На скриншоте демонстрируется успешное прохождение набора unit-тестов.
+Зелёные маркеры подтверждают отсутствие регрессий в базовом алгоритме
+теней и корректную работу новой функциональности расчёта площадей.</p>
+<h2 id="заключение">Заключение</h2>
+<p>Таким образом, при решении данной задачи было реализовано 3 новых
+метода: <code>xy()</code> в классе <code>R3</code>,
+<code>condition()</code> и <code>facet_area()</code> в классе
+<code>Facet</code> (вспомогательный метод _area() не учитвается), а
+также модифицирован метод <code>draw()</code> в классе
+<code>Polyedr</code>. Общий объём модификации вместе с тестами не
+превышает 100 строк кода.</p>
+<h2
+id="команды-с-помощью-которых-получены-итоговые-отчёты-в-заданных-форматах">Команды,
+с помощью которых получены итоговые отчёты в заданных форматах</h2>
+<h3 id="для-получения-html">Для получения HTML:</h3>
+<pre><code>
+pandoc -o report.html -f markdown -t html -s \
+  --template defaults/default.html5 \
+  --lua-filter include-code-files.lua \
+  --metadata-file=metadata.yaml \
+  --mathjax \
+  report.md
+</code></pre>
+<h3 id="для-получения-pdf">Для получения PDF:</h3>
+<pre><code>
+pandoc -o report.pdf -f markdown -t pdf -s \
+  --template defaults/default.latex \
+  --lua-filter include-code-files.lua \
+  --metadata-file=metadata.yaml \
+  report.md
+</code></pre>
+<h3 id="для-получения-docx">Для получения DOCX:</h3>
+<pre><code>
+pandoc -o report.docx -f markdown -t docx \
+  --lua-filter include-code-files.lua \
+  --metadata-file=metadata.yaml \
+  report.md
+</code></pre>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$','$'], ['\\(','\\)']],
+    displayMath: [['\\[','\\]']],
+    processEscapes: false,
+    processRefs: true,
+    processEnvironments: true,
+    macros: {
+      sh: "{\\mathop{\\mathrm{sh}\\ }\\nolimits}",
+      ch: "{\\mathop{\\mathrm{ch}\\ }\\nolimits}",
+      tg: "{\\mathop{\\mathrm{tg}\\ }\\nolimits}",
+      ctg: "{\\mathop{\\mathrm{ctg}\\ }\\nolimits}",
+      arctg: "{\\mathop{\\mathrm{arctg}\\ }\\nolimits}",
+      arcctg: "{\\mathop{\\mathrm{arcctg}\\ }\\nolimits}",
+      th: "{\\mathop{\\mathrm{th}\\ }\\nolimits}",
+      cth: "{\\mathop{\\mathrm{cth}\\ }\\nolimits}",
+      cosec: "{\\mathop{\\mathrm{cosec}\\ }\\nolimits}",
+      Prob: "{\\mathop{\\mathsf{P}}\\nolimits}",
+      Variance: "{\\mathop{\\mathsf{D}}\\nolimits}",
+      nod: "{\\mathop{\\mathrm{н.о.д.}}\\nolimits}",
+      nok: "{\\mathop{\\mathrm{н.о.к.}}\\nolimits}",
+      NOD: "{\\mathop{\\mathrm{НОД}}\\nolimits}",
+      NOK: "{\\mathop{\\mathrm{НОК}}\\nolimits}",
+      Proj: "{\\mathop{\\mathrm{Пр}}\\nolimits}"
+    }
+  },
+  options: {
+    skipHtmlTags: ['script','noscript','style','textarea','pre','code'],
+    ignoreHtmlClass: 'tex2jax_ignore',
+    processHtmlClass: 'tex2jax_process'
+  },
+  svg: {
+    displayAlign: 'left'
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+</body>
+</html>
